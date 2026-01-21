@@ -1,10 +1,10 @@
-import NextAuth from "next-auth";
-import Discord from "next-auth/providers/discord";
+import NextAuth, { NextAuthOptions } from "next-auth";
+import DiscordProvider from "next-auth/providers/discord";
 
-const { handlers, auth, signIn, signOut } = NextAuth({
+export const authOptions: NextAuthOptions = {
     secret: "x7K9mP4vQw2sL8nR3tY6uJ1fH5gC0bWa",
     providers: [
-        Discord({
+        DiscordProvider({
             clientId: "1459400314372489246",
             clientSecret: "cVot7bjutcnVS9SAc-nI8ISD3T59LM-t",
             authorization: {
@@ -32,6 +32,14 @@ const { handlers, auth, signIn, signOut } = NextAuth({
     pages: {
         signIn: "/login",
     },
-});
+};
 
-export { handlers, auth, signIn, signOut };
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };
+
+// Export auth function for middleware and API routes
+export async function auth() {
+    const { getServerSession } = await import("next-auth");
+    return getServerSession(authOptions);
+}

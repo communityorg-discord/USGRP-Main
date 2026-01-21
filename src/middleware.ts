@@ -1,9 +1,11 @@
-import { auth } from "@/auth";
+import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export default auth((req: NextRequest & { auth?: { user?: { id?: string } } }) => {
-    const isLoggedIn = !!req.auth;
+export async function middleware(req: NextRequest) {
+    const token = await getToken({ req, secret: "x7K9mP4vQw2sL8nR3tY6uJ1fH5gC0bWa" });
+    const isLoggedIn = !!token;
+
     const isAuthPage = req.nextUrl.pathname === "/login";
     const isApiRoute = req.nextUrl.pathname.startsWith("/api");
     const isDashboardRoute = req.nextUrl.pathname.startsWith("/dashboard") ||
@@ -31,7 +33,7 @@ export default auth((req: NextRequest & { auth?: { user?: { id?: string } } }) =
     }
 
     return NextResponse.next();
-});
+}
 
 export const config = {
     matcher: [

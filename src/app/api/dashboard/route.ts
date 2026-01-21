@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/auth';
 import { getCitizen, getAccounts, getTransactions, getCredit, getLoans, getFines, getHousing, checkApiHealth } from '@/lib/api';
 
 export async function GET() {
     // Get the authenticated user
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     const userId = (session?.user as { id?: string })?.id;
 
     if (!userId) {
