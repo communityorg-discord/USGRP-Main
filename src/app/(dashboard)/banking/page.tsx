@@ -136,7 +136,7 @@ export default function BankingPage() {
 
             {/* Account Summary Cards */}
             <div className="accounts-grid">
-                {mockAccounts.map((account) => (
+                {accounts.map((account, idx) => (
                     <div
                         key={account.id}
                         className="account-card"
@@ -360,7 +360,7 @@ export default function BankingPage() {
                     <div className="sidebar-widget">
                         <h3>Account Summary</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {mockAccounts.map((acc) => (
+                            {accounts.map((acc, idx) => (
                                 <div key={acc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
                                         <div style={{ fontSize: '14px', fontWeight: 500 }}>{acc.type}</div>
@@ -413,7 +413,7 @@ export default function BankingPage() {
                                             <label className="form-label">From Account</label>
                                             <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className="form-select">
                                                 <option value="">Select account</option>
-                                                {mockAccounts.map((acc) => (
+                                                {accounts.map((acc, idx) => (
                                                     <option key={acc.id} value={acc.id}>{acc.type} - ${acc.balance.toLocaleString()}</option>
                                                 ))}
                                             </select>
