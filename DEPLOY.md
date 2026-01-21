@@ -19,7 +19,7 @@ npm install
 Create `.env.local`:
 ```bash
 # Economy Bot API Connection
-ECONOMY_BOT_API_URL=http://localhost:3002
+ECONOMY_BOT_API_URL=http://localhost:3320
 ECONOMY_BOT_API_KEY=citizen-portal-key
 
 # Default guild ID (your Discord server ID)
@@ -83,7 +83,7 @@ startCitizenApi();
 
 Add to CO-Economy-Bot `.env`:
 ```
-CITIZEN_API_PORT=3002
+CITIZEN_API_PORT=3320
 CITIZEN_API_KEY=citizen-portal-key
 MAIN_GUILD_ID=YOUR_GUILD_ID
 ```
