@@ -195,20 +195,20 @@ export default function BankingPage() {
                                                     <div style={{ fontSize: '14px', fontWeight: 600 }}>{card.expiry}</div>
                                                 </div>
                                             </div>
-                                            {'limit' in card && (
+                                            {'limit' in card && card.limit && (
                                                 <div style={{ marginTop: '16px' }}>
                                                     <div style={{ height: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '3px' }}>
                                                         <div
                                                             style={{
                                                                 height: '100%',
-                                                                width: `${(card.used / card.limit) * 100}%`,
+                                                                width: `${((card.used ?? 0) / (card.limit ?? 1)) * 100}%`,
                                                                 background: 'white',
                                                                 borderRadius: '3px',
                                                             }}
                                                         />
                                                     </div>
                                                     <div style={{ fontSize: '12px', marginTop: '6px', opacity: 0.8 }}>
-                                                        ${card.used.toLocaleString()} / ${card.limit.toLocaleString()} used
+                                                        ${(card.used ?? 0).toLocaleString()} / ${(card.limit ?? 0).toLocaleString()} used
                                                     </div>
                                                 </div>
                                             )}
