@@ -1,20 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 
-// Mock user data - from citizens table + government_members.json
-const mockUser = {
-    name: 'John Doe',
-    citizenId: 'USC-001234',
-    discordId: '723199054514749450',
-    discordUsername: 'johndoe#0001',
-    avatar: null,
-    email: 'john.doe@usgrp.xyz',
-    joined: 'Jan 15, 2025',
-    status: 'Active',
-};
+interface UserProfile {
+    name: string;
+    citizenId: string;
+    discordId: string;
+    discordUsername?: string;
+    avatar?: string;
+    email?: string;
+    joined?: string;
+    status?: string;
+}
 
-const mockNotificationSettings = {
+const defaultNotifications = {
     transactions: true,
     lowBalance: true,
     loanPayments: true,
@@ -22,29 +22,48 @@ const mockNotificationSettings = {
     marketing: false,
 };
 
-const mockBudgets = [
-    { category: 'Housing', limit: 2000, spent: 1500 },
-    { category: 'Food', limit: 500, spent: 210 },
-    { category: 'Transportation', limit: 300, spent: 55 },
-    { category: 'Shopping', limit: 200, spent: 45 },
-    { category: 'Entertainment', limit: 300, spent: 250 },
-];
-
-const mockAchievements = [
-    { id: 1, name: 'First Transaction', icon: '💰', earned: 'Jan 15, 2025' },
-    { id: 2, name: 'First Loan Paid', icon: '✅', earned: 'Nov 2025' },
-    { id: 3, name: 'Good Credit', icon: '📊', earned: 'Dec 2025' },
-    { id: 4, name: '50 Transactions', icon: '🏆', earned: null },
-    { id: 5, name: 'Zero Debt', icon: '🌟', earned: null },
+const defaultBudgets = [
+    { category: 'Housing', limit: 2000, spent: 0 },
+    { category: 'Food', limit: 500, spent: 0 },
+    { category: 'Transportation', limit: 300, spent: 0 },
+    { category: 'Shopping', limit: 200, spent: 0 },
+    { category: 'Entertainment', limit: 300, spent: 0 },
 ];
 
 export default function ProfilePage() {
+    const { data: session } = useSession();
+    const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [loading, setLoading] = useState(true);
     const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('light');
-    const [notifications, setNotifications] = useState(mockNotificationSettings);
-    const [budgets, setBudgets] = useState(mockBudgets);
+    const [notifications, setNotifications] = useState(defaultNotifications);
+    const [budgets, setBudgets] = useState(defaultBudgets);
     const [showEditBudget, setShowEditBudget] = useState(false);
-    const [editingBudget, setEditingBudget] = useState<typeof mockBudgets[0] | null>(null);
+    const [editingBudget, setEditingBudget] = useState<typeof defaultBudgets[0] | null>(null);
     const [newLimit, setNewLimit] = useState('');
+
+    useEffect(() => {
+        async function fetchProfile() {
+            try {
+                const res = await fetch('/api/dashboard');
+                if (res.ok) {
+                    const data = await res.json();
+                    setProfile({
+                        name: data.citizen?.name || session?.user?.name || 'Citizen',
+                        citizenId: data.citizen?.citizenId || 'Unknown',
+                        discordId: (session?.user as { id?: string })?.id || '',
+                        discordUsername: session?.user?.name || '',
+                        avatar: session?.user?.image || undefined,
+                        status: 'Active'
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching profile:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchProfile();
+    }, [session]);
 
     const toggleNotification = (key: keyof typeof notifications) => {
         setNotifications({ ...notifications, [key]: !notifications[key] });
@@ -61,6 +80,17 @@ export default function ProfilePage() {
     // Activity data for heatmap (last 12 weeks)
     const activityData = Array.from({ length: 84 }, (_, i) => Math.random() > 0.3 ? Math.floor(Math.random() * 5) : 0);
 
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '32px', marginBottom: '16px' }}>⏳</div>
+                    <div style={{ color: '#64748b' }}>Loading profile...</div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div>
             {/* Page Header */}
@@ -70,22 +100,22 @@ export default function ProfilePage() {
                         width: '80px',
                         height: '80px',
                         borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.2)',
+                        background: profile?.avatar ? `url(${profile.avatar}) center/cover` : 'rgba(255,255,255,0.2)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: '36px',
                     }}>
-                        👤
+                        {!profile?.avatar && '👤'}
                     </div>
                     <div>
-                        <h1>{mockUser.name}</h1>
-                        <p style={{ opacity: 0.8 }}>{mockUser.discordUsername} • {mockUser.citizenId}</p>
+                        <h1>{profile?.name || 'Citizen'}</h1>
+                        <p style={{ opacity: 0.8 }}>{profile?.discordUsername || 'Discord User'} • {profile?.citizenId || 'Unknown'}</p>
                     </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>Member Since</div>
-                    <div style={{ fontSize: '24px', fontWeight: 600 }}>{mockUser.joined}</div>
+                    <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>Account Status</div>
+                    <div style={{ fontSize: '24px', fontWeight: 600 }}>{profile?.status || 'Active'}</div>
                 </div>
             </div>
 
@@ -97,30 +127,29 @@ export default function ProfilePage() {
                     <div className="panel">
                         <div className="panel-header">
                             <h2>Profile Information</h2>
-                            <button className="btn-link">Edit</button>
                         </div>
                         <div style={{ padding: '24px' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
                                 <div>
                                     <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Full Name</div>
-                                    <div style={{ fontWeight: 500 }}>{mockUser.name}</div>
+                                    <div style={{ fontWeight: 500 }}>{profile?.name || 'N/A'}</div>
                                 </div>
                                 <div>
                                     <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Citizen ID</div>
-                                    <div style={{ fontWeight: 500, fontFamily: 'monospace' }}>{mockUser.citizenId}</div>
+                                    <div style={{ fontWeight: 500, fontFamily: 'monospace' }}>{profile?.citizenId || 'N/A'}</div>
                                 </div>
                                 <div>
-                                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Discord</div>
-                                    <div style={{ fontWeight: 500 }}>{mockUser.discordUsername}</div>
+                                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Discord ID</div>
+                                    <div style={{ fontWeight: 500, fontFamily: 'monospace' }}>{profile?.discordId || 'N/A'}</div>
                                 </div>
                                 <div>
-                                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Email</div>
-                                    <div style={{ fontWeight: 500 }}>{mockUser.email}</div>
+                                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Discord Username</div>
+                                    <div style={{ fontWeight: 500 }}>{profile?.discordUsername || 'N/A'}</div>
                                 </div>
                                 <div>
                                     <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Account Status</div>
                                     <span style={{ padding: '4px 12px', background: '#f0fdf4', color: '#22c55e', borderRadius: '12px', fontSize: '13px', fontWeight: 600 }}>
-                                        {mockUser.status}
+                                        {profile?.status || 'Active'}
                                     </span>
                                 </div>
                             </div>
@@ -278,33 +307,6 @@ export default function ProfilePage() {
                         </div>
                     </div>
 
-                    {/* Achievements */}
-                    <div className="sidebar-widget">
-                        <h3>Achievements</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
-                            {mockAchievements.map((ach) => (
-                                <div
-                                    key={ach.id}
-                                    title={ach.name + (ach.earned ? ` - Earned ${ach.earned}` : ' - Not earned')}
-                                    style={{
-                                        width: '100%',
-                                        aspectRatio: '1',
-                                        background: ach.earned ? '#f0fdf4' : '#f1f5f9',
-                                        borderRadius: '8px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '24px',
-                                        opacity: ach.earned ? 1 : 0.4,
-                                        border: ach.earned ? '2px solid #22c55e' : '1px dashed #cbd5e1',
-                                    }}
-                                >
-                                    {ach.icon}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
                     {/* Quick Actions */}
                     <div className="sidebar-widget">
                         <h3>Account</h3>
@@ -312,7 +314,9 @@ export default function ProfilePage() {
                             <button className="quick-link-btn"><span>🔗</span> Link Discord</button>
                             <button className="quick-link-btn"><span>📧</span> Change Email</button>
                             <button className="quick-link-btn"><span>🔐</span> Security Settings</button>
-                            <button className="quick-link-btn" style={{ color: '#ef4444' }}><span>🚪</span> Sign Out</button>
+                            <button className="quick-link-btn" style={{ color: '#ef4444' }} onClick={() => signOut({ callbackUrl: '/login' })}>
+                                <span>🚪</span> Sign Out
+                            </button>
                         </div>
                     </div>
                 </div>
