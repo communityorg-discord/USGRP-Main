@@ -4,8 +4,8 @@
  * Client for connecting to the CO-Economy-Bot's citizen API.
  */
 
-const API_BASE = process.env.ECONOMY_BOT_API_URL || 'http://localhost:3320';
-const API_KEY = process.env.ECONOMY_BOT_API_KEY || 'citizen-portal-key';
+const API_BASE = 'http://localhost:3320';
+const API_KEY = 'citizen-portal-key';
 
 export interface Citizen {
     citizenId: string;
