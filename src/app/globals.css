@@ -1,0 +1,627 @@
+@import "tailwindcss";
+
+/* USGRP Citizen Portal - Full Desktop Banking Layout */
+
+:root {
+  /* Official US Government colors */
+  --primary: #112e51;
+  --primary-light: #205493;
+  --primary-dark: #0a1f38;
+  --accent: #fdb81e;
+  --accent-dark: #e59b00;
+
+  /* Clean backgrounds */
+  --bg-page: #f1f1f1;
+  --bg-white: #ffffff;
+  --bg-light: #f7f7f7;
+
+  /* Text */
+  --text-dark: #212121;
+  --text-body: #323a45;
+  --text-gray: #5b616b;
+  --text-light: #aeb0b5;
+
+  /* Borders */
+  --border: #d6d7d9;
+  --border-dark: #aeb0b5;
+
+  /* Status */
+  --success: #2e8540;
+  --success-bg: #e7f4e4;
+  --danger: #e31c3d;
+  --danger-bg: #f9dede;
+  --warning: #fdb81e;
+  --warning-bg: #fef0c8;
+  --info: #02bfe7;
+  --info-bg: #e1f3f8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--bg-page);
+}
+
+body {
+  font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--text-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== FULL-WIDTH HEADER ===== */
+.site-header {
+  background: var(--primary);
+  width: 100%;
+}
+
+.header-banner {
+  background: var(--primary-dark);
+  padding: 8px 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.header-banner-content {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-main {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 24px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: white;
+  text-decoration: none;
+}
+
+.brand-seal {
+  width: 64px;
+  height: 64px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.brand-text h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.brand-text p {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.header-account {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.account-greeting {
+  text-align: right;
+  color: white;
+}
+
+.greeting-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.greeting-id {
+  font-size: 13px;
+  opacity: 0.75;
+  font-family: monospace;
+}
+
+.account-avatar {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+}
+
+/* ===== NAVIGATION BAR ===== */
+.site-nav {
+  background: var(--bg-white);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.nav-container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  gap: 0;
+}
+
+.nav-item {
+  padding: 18px 28px;
+  color: var(--text-gray);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.nav-item:hover {
+  color: var(--primary);
+  background: var(--bg-light);
+}
+
+.nav-item.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background: var(--bg-light);
+}
+
+/* ===== MAIN CONTENT AREA ===== */
+.site-main {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 40px;
+}
+
+/* ===== PAGE HEADER ===== */
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+
+.page-subtitle {
+  font-size: 16px;
+  color: var(--text-gray);
+}
+
+/* ===== ACCOUNT OVERVIEW GRID ===== */
+.accounts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.account-card {
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 28px 32px;
+  position: relative;
+}
+
+.account-card.primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+}
+
+.account-card.primary .account-label {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.account-icon {
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.account-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.account-balance {
+  font-size: 42px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.account-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.account-change.up {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.account-card.primary .account-change.up {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.account-number {
+  position: absolute;
+  top: 28px;
+  right: 32px;
+  font-size: 13px;
+  color: var(--text-light);
+  font-family: monospace;
+}
+
+.account-card.primary .account-number {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ===== TWO COLUMN LAYOUT ===== */
+.content-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+}
+
+/* ===== TRANSACTIONS PANEL ===== */
+.panel {
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.panel-header {
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.panel-action {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-light);
+  text-decoration: none;
+}
+
+.panel-action:hover {
+  text-decoration: underline;
+}
+
+/* Transaction Table */
+.tx-table {
+  width: 100%;
+}
+
+.tx-table thead th {
+  padding: 14px 28px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-gray);
+  background: var(--bg-light);
+  border-bottom: 1px solid var(--border);
+}
+
+.tx-table tbody td {
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.tx-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tx-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.tx-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.tx-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.tx-icon.in {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.tx-icon.out {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.tx-info {
+  flex: 1;
+}
+
+.tx-desc {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.tx-category {
+  font-size: 14px;
+  color: var(--text-gray);
+  margin-top: 2px;
+}
+
+.tx-date {
+  font-size: 14px;
+  color: var(--text-gray);
+}
+
+.tx-amount {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.tx-amount.credit {
+  color: var(--success);
+}
+
+.tx-amount.debit {
+  color: var(--text-dark);
+}
+
+/* ===== SIDEBAR WIDGETS ===== */
+.sidebar-widget {
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 28px;
+  margin-bottom: 24px;
+}
+
+.widget-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Credit Score */
+.credit-display {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.credit-score-big {
+  font-size: 72px;
+  font-weight: 700;
+  color: var(--text-dark);
+  line-height: 1;
+}
+
+.credit-rating {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.credit-rating.good {
+  color: var(--success);
+}
+
+.credit-rating.fair {
+  color: var(--warning);
+}
+
+.credit-rating.poor {
+  color: var(--danger);
+}
+
+.credit-bar {
+  height: 12px;
+  background: linear-gradient(to right,
+      var(--danger) 0%,
+      var(--warning) 40%,
+      #7ab648 60%,
+      var(--success) 100%);
+  border-radius: 6px;
+  margin: 24px 0 12px;
+  position: relative;
+}
+
+.credit-marker {
+  position: absolute;
+  top: -4px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border: 3px solid var(--text-dark);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.credit-range {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-gray);
+}
+
+/* Quick Links */
+.quick-links {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quick-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg-light);
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--text-body);
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.quick-link:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.quick-link-icon {
+  font-size: 20px;
+}
+
+/* ===== FOOTER ===== */
+.site-footer {
+  background: var(--primary-dark);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 40px;
+  margin-top: 60px;
+}
+
+.footer-content {
+  max-width: 1600px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.footer-seal {
+  width: 48px;
+  height: 48px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.footer-text {
+  font-size: 15px;
+}
+
+.footer-disclaimer {
+  font-size: 13px;
+  opacity: 0.6;
+  margin-top: 4px;
+}
+
+.footer-links {
+  display: flex;
+  gap: 32px;
+}
+
+.footer-link {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.footer-link:hover {
+  color: white;
+  text-decoration: underline;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+  .accounts-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .accounts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .header-main {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .account-greeting {
+    text-align: center;
+  }
+
+  .nav-container {
+    overflow-x: auto;
+  }
+}
