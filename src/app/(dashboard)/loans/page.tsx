@@ -1,36 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-// Mock loans
-const mockLoans = [
-    { id: 'LOAN-001', type: 'Housing', principal: 50000, remaining: 42500, apr: 5.5, status: 'current', nextPayment: 'Feb 1, 2026', monthlyPayment: 950, dueIn: 11, term: 60, payments: 18 },
-    { id: 'LOAN-002', type: 'Vehicle', principal: 25000, remaining: 18750, apr: 7.5, status: 'current', nextPayment: 'Jan 28, 2026', monthlyPayment: 485, dueIn: 7, term: 36, payments: 12 },
-];
+interface Loan {
+    loan_id: string;
+    loan_type: string;
+    principal: number;
+    remaining_balance: number;
+    interest_rate?: number;
+    weekly_payment: number;
+    status: string;
+    payments_made?: number;
+    term_weeks?: number;
+    next_payment_date?: string;
+}
 
-// Mock credit score
-const mockCreditScore = {
-    score: 720,
-    rating: 'Good',
-    change: 15,
-    factors: [
-        { name: 'Payment History', impact: 'positive', detail: 'All payments on time' },
-        { name: 'Credit Utilization', impact: 'positive', detail: '25% of limit used' },
-        { name: 'Account Age', impact: 'neutral', detail: '1 year average' },
-        { name: 'Recent Inquiries', impact: 'negative', detail: '2 in last 6 months' },
-    ],
-};
-
-// Mock loan history
-const mockLoanHistory = [
-    { id: 'LOAN-000', type: 'Personal', principal: 5000, paidOff: 'Nov 2025', totalPaid: 5450, interest: 450 },
-];
+interface CreditScore {
+    score: number;
+    band: string;
+    factors?: { name: string; impact: string; detail: string }[];
+}
 
 export default function LoansPage() {
+    const [loans, setLoans] = useState<Loan[]>([]);
+    const [credit, setCredit] = useState<CreditScore>({ score: 0, band: 'Unknown' });
+    const [loading, setLoading] = useState(true);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showApplyModal, setShowApplyModal] = useState(false);
     const [showCalculatorModal, setShowCalculatorModal] = useState(false);
-    const [selectedLoan, setSelectedLoan] = useState<typeof mockLoans[0] | null>(null);
+    const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
     const [paymentAmount, setPaymentAmount] = useState('');
     const [paymentSuccess, setPaymentSuccess] = useState(false);
 
@@ -44,12 +42,30 @@ export default function LoansPage() {
     const [calcRate, setCalcRate] = useState('12');
     const [calcTerm, setCalcTerm] = useState('12');
 
-    const totalDebt = mockLoans.reduce((s, l) => s + l.remaining, 0);
-    const monthlyPayments = mockLoans.reduce((s, l) => s + l.monthlyPayment, 0);
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const res = await fetch('/api/loans');
+                if (res.ok) {
+                    const data = await res.json();
+                    setLoans(data.loans || []);
+                    setCredit(data.credit || { score: 0, band: 'Unknown' });
+                }
+            } catch (error) {
+                console.error('Failed to fetch loans:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
+    }, []);
 
-    const openPayment = (loan: typeof mockLoans[0]) => {
+    const totalDebt = loans.reduce((s, l) => s + (l.remaining_balance || 0), 0);
+    const weeklyPayments = loans.reduce((s, l) => s + (l.weekly_payment || 0), 0);
+
+    const openPayment = (loan: Loan) => {
         setSelectedLoan(loan);
-        setPaymentAmount(loan.monthlyPayment.toString());
+        setPaymentAmount(loan.weekly_payment.toString());
         setShowPaymentModal(true);
     };
 
@@ -67,6 +83,17 @@ export default function LoansPage() {
         if (monthlyRate === 0) return Math.round(p / n);
         return Math.round((p * monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1));
     };
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '32px', marginBottom: '16px' }}>⏳</div>
+                    <div style={{ color: '#64748b' }}>Loading loans data...</div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -88,27 +115,27 @@ export default function LoansPage() {
                     <div className="account-icon">📊</div>
                     <div className="account-info">
                         <div className="account-type">Credit Score</div>
-                        <div className="account-number">{mockCreditScore.rating}</div>
+                        <div className="account-number">{credit.band}</div>
                     </div>
-                    <div className="account-balance" style={{ color: mockCreditScore.score >= 700 ? '#22c55e' : '#fdb81e' }}>
-                        {mockCreditScore.score}
+                    <div className="account-balance" style={{ color: credit.score >= 700 ? '#22c55e' : credit.score >= 500 ? '#fdb81e' : '#ef4444' }}>
+                        {credit.score}
                     </div>
                 </div>
                 <div className="account-card">
                     <div className="account-icon">💳</div>
                     <div className="account-info">
                         <div className="account-type">Active Loans</div>
-                        <div className="account-number">{mockLoans.length} loans</div>
+                        <div className="account-number">{loans.length} loans</div>
                     </div>
-                    <div className="account-balance">{mockLoans.length}</div>
+                    <div className="account-balance">{loans.length}</div>
                 </div>
                 <div className="account-card">
                     <div className="account-icon" style={{ background: '#fef2f2' }}>📅</div>
                     <div className="account-info">
-                        <div className="account-type">Monthly Payments</div>
-                        <div className="account-number">Due each month</div>
+                        <div className="account-type">Weekly Payments</div>
+                        <div className="account-number">Due each week</div>
                     </div>
-                    <div className="account-balance" style={{ color: '#ef4444' }}>${monthlyPayments.toLocaleString()}</div>
+                    <div className="account-balance" style={{ color: '#ef4444' }}>${weeklyPayments.toLocaleString()}</div>
                 </div>
             </div>
 
@@ -132,119 +159,82 @@ export default function LoansPage() {
                             <h2>Active Loans</h2>
                         </div>
                         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                            {mockLoans.map((loan) => (
-                                <div
-                                    key={loan.id}
-                                    style={{
-                                        padding: '24px',
-                                        background: '#f8fafc',
-                                        borderRadius: '12px',
-                                        border: loan.dueIn <= 7 ? '2px solid #fdb81e' : '1px solid #e2e8f0',
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-                                        <div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-                                                <span style={{ fontWeight: 700, fontSize: '20px' }}>{loan.type} Loan</span>
-                                                {loan.dueIn <= 7 && (
-                                                    <span style={{ padding: '4px 8px', background: '#fef3c7', color: '#92400e', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}>
-                                                        Due in {loan.dueIn} days
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div style={{ fontSize: '13px', color: '#64748b', fontFamily: 'monospace' }}>{loan.id}</div>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontWeight: 700, fontSize: '28px', color: '#ef4444' }}>${loan.remaining.toLocaleString()}</div>
-                                            <div style={{ fontSize: '13px', color: '#64748b' }}>of ${loan.principal.toLocaleString()}</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Progress Bar */}
-                                    <div style={{ marginBottom: '20px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                            <span style={{ fontSize: '13px', color: '#64748b' }}>Progress</span>
-                                            <span style={{ fontSize: '13px', fontWeight: 600 }}>{Math.round(((loan.principal - loan.remaining) / loan.principal) * 100)}%</span>
-                                        </div>
-                                        <div style={{ height: '10px', background: '#e2e8f0', borderRadius: '5px', overflow: 'hidden' }}>
-                                            <div style={{
-                                                height: '100%',
-                                                width: `${((loan.principal - loan.remaining) / loan.principal) * 100}%`,
-                                                background: 'linear-gradient(90deg, #22c55e 0%, #16a34a 100%)',
-                                                borderRadius: '5px',
-                                            }} />
-                                        </div>
-                                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
-                                            {loan.payments} of {loan.term} payments made
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px', padding: '16px', background: 'white', borderRadius: '8px' }}>
-                                        <div>
-                                            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>APR</div>
-                                            <div style={{ fontWeight: 600, fontSize: '16px' }}>{loan.apr}%</div>
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Monthly</div>
-                                            <div style={{ fontWeight: 600, fontSize: '16px' }}>${loan.monthlyPayment}</div>
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Next Due</div>
-                                            <div style={{ fontWeight: 600, fontSize: '16px', color: loan.dueIn <= 7 ? '#fdb81e' : undefined }}>{loan.nextPayment}</div>
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Term</div>
-                                            <div style={{ fontWeight: 600, fontSize: '16px' }}>{loan.term} mo</div>
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', gap: '12px' }}>
-                                        <button onClick={() => openPayment(loan)} style={{ flex: 1, padding: '12px 24px', background: '#22c55e', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
-                                            Make Payment
-                                        </button>
-                                        <button style={{ padding: '12px 24px', background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#64748b', cursor: 'pointer' }}>
-                                            View Details
-                                        </button>
-                                    </div>
+                            {loans.length === 0 ? (
+                                <div style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>
+                                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
+                                    <div style={{ fontWeight: 600 }}>No active loans</div>
+                                    <div style={{ fontSize: '14px' }}>You're debt free!</div>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+                            ) : (
+                                loans.map((loan) => (
+                                    <div
+                                        key={loan.loan_id}
+                                        style={{
+                                            padding: '24px',
+                                            background: '#f8fafc',
+                                            borderRadius: '12px',
+                                            border: '1px solid #e2e8f0',
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                                            <div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+                                                    <span style={{ fontWeight: 700, fontSize: '20px' }}>{loan.loan_type} Loan</span>
+                                                    <span style={{ padding: '4px 8px', background: loan.status === 'ACTIVE' ? '#dbeafe' : '#fef3c7', color: loan.status === 'ACTIVE' ? '#1d4ed8' : '#92400e', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}>
+                                                        {loan.status}
+                                                    </span>
+                                                </div>
+                                                <div style={{ fontSize: '13px', color: '#64748b', fontFamily: 'monospace' }}>{loan.loan_id}</div>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <div style={{ fontWeight: 700, fontSize: '28px', color: '#ef4444' }}>${(loan.remaining_balance || 0).toLocaleString()}</div>
+                                                <div style={{ fontSize: '13px', color: '#64748b' }}>of ${(loan.principal || 0).toLocaleString()}</div>
+                                            </div>
+                                        </div>
 
-                    {/* Loan History */}
-                    <div className="panel" style={{ marginTop: '24px' }}>
-                        <div className="panel-header">
-                            <h2>Paid Off Loans</h2>
+                                        {/* Progress Bar */}
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                                <span style={{ fontSize: '13px', color: '#64748b' }}>Progress</span>
+                                                <span style={{ fontSize: '13px', fontWeight: 600 }}>{Math.round(((loan.principal - loan.remaining_balance) / loan.principal) * 100)}%</span>
+                                            </div>
+                                            <div style={{ height: '10px', background: '#e2e8f0', borderRadius: '5px', overflow: 'hidden' }}>
+                                                <div style={{
+                                                    height: '100%',
+                                                    width: `${Math.max(0, ((loan.principal - loan.remaining_balance) / loan.principal) * 100)}%`,
+                                                    background: 'linear-gradient(90deg, #22c55e 0%, #16a34a 100%)',
+                                                    borderRadius: '5px',
+                                                }} />
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px', padding: '16px', background: 'white', borderRadius: '8px' }}>
+                                            <div>
+                                                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>APR</div>
+                                                <div style={{ fontWeight: 600, fontSize: '16px' }}>{loan.interest_rate || 0}%</div>
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Weekly</div>
+                                                <div style={{ fontWeight: 600, fontSize: '16px' }}>${loan.weekly_payment}</div>
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Payments</div>
+                                                <div style={{ fontWeight: 600, fontSize: '16px' }}>{loan.payments_made || 0} / {loan.term_weeks || '?'}</div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            <button onClick={() => openPayment(loan)} style={{ flex: 1, padding: '12px 24px', background: '#22c55e', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
+                                                Make Payment
+                                            </button>
+                                            <button style={{ padding: '12px 24px', background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#64748b', cursor: 'pointer' }}>
+                                                View Details
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
-                        <table className="tx-table">
-                            <thead>
-                                <tr>
-                                    <th>Loan</th>
-                                    <th>Principal</th>
-                                    <th>Interest Paid</th>
-                                    <th>Total Paid</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {mockLoanHistory.map((loan) => (
-                                    <tr key={loan.id}>
-                                        <td>
-                                            <div style={{ fontWeight: 500 }}>{loan.type} Loan</div>
-                                            <div style={{ fontSize: '12px', color: '#64748b' }}>{loan.id}</div>
-                                        </td>
-                                        <td>${loan.principal.toLocaleString()}</td>
-                                        <td style={{ color: '#64748b' }}>${loan.interest.toLocaleString()}</td>
-                                        <td style={{ fontWeight: 600 }}>${loan.totalPaid.toLocaleString()}</td>
-                                        <td>
-                                            <span style={{ padding: '4px 12px', background: '#f0fdf4', color: '#22c55e', borderRadius: '12px', fontSize: '13px', fontWeight: 600 }}>
-                                                ✓ Paid Off ({loan.paidOff})
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
                     </div>
                 </div>
 
@@ -257,7 +247,7 @@ export default function LoansPage() {
                             <div className="credit-gauge">
                                 <svg viewBox="0 0 120 80" style={{ width: '100%', maxWidth: '160px' }}>
                                     <path d="M 10 70 A 50 50 0 0 1 110 70" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="12" strokeLinecap="round" />
-                                    <path d="M 10 70 A 50 50 0 0 1 110 70" fill="none" stroke="url(#scoreGrad)" strokeWidth="12" strokeLinecap="round" strokeDasharray={`${(mockCreditScore.score / 850) * 157} 157`} />
+                                    <path d="M 10 70 A 50 50 0 0 1 110 70" fill="none" stroke="url(#scoreGrad)" strokeWidth="12" strokeLinecap="round" strokeDasharray={`${(credit.score / 850) * 157} 157`} />
                                     <defs>
                                         <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                                             <stop offset="0%" stopColor="#ef4444" />
@@ -265,25 +255,26 @@ export default function LoansPage() {
                                             <stop offset="100%" stopColor="#22c55e" />
                                         </linearGradient>
                                     </defs>
-                                    <text x="60" y="52" textAnchor="middle" fontSize="28" fontWeight="700" fill="#112e51">{mockCreditScore.score}</text>
-                                    <text x="60" y="70" textAnchor="middle" fontSize="11" fill="#64748b">{mockCreditScore.rating}</text>
+                                    <text x="60" y="52" textAnchor="middle" fontSize="28" fontWeight="700" fill="#112e51">{credit.score}</text>
+                                    <text x="60" y="70" textAnchor="middle" fontSize="11" fill="#64748b">{credit.band}</text>
                                 </svg>
                             </div>
-                            <div style={{ color: '#22c55e', fontSize: '14px', fontWeight: 500 }}>↑ +{mockCreditScore.change} this month</div>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {mockCreditScore.factors.map((factor, idx) => (
-                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: '#f8fafc', borderRadius: '8px' }}>
-                                    <div>
-                                        <div style={{ fontSize: '13px', fontWeight: 600 }}>{factor.name}</div>
-                                        <div style={{ fontSize: '11px', color: '#64748b' }}>{factor.detail}</div>
+                        {credit.factors && credit.factors.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {credit.factors.map((factor, idx) => (
+                                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: '#f8fafc', borderRadius: '8px' }}>
+                                        <div>
+                                            <div style={{ fontSize: '13px', fontWeight: 600 }}>{factor.name}</div>
+                                            <div style={{ fontSize: '11px', color: '#64748b' }}>{factor.detail}</div>
+                                        </div>
+                                        <span style={{ fontSize: '18px', color: factor.impact === 'positive' ? '#22c55e' : factor.impact === 'negative' ? '#ef4444' : '#64748b' }}>
+                                            {factor.impact === 'positive' ? '↑' : factor.impact === 'negative' ? '↓' : '–'}
+                                        </span>
                                     </div>
-                                    <span style={{ fontSize: '18px', color: factor.impact === 'positive' ? '#22c55e' : factor.impact === 'negative' ? '#ef4444' : '#64748b' }}>
-                                        {factor.impact === 'positive' ? '↑' : factor.impact === 'negative' ? '↓' : '–'}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Quick Actions */}
@@ -292,12 +283,6 @@ export default function LoansPage() {
                         <div className="quick-links">
                             <button className="quick-link-btn" onClick={() => setShowApplyModal(true)}>
                                 <span>➕</span> Apply for Loan
-                            </button>
-                            <button className="quick-link-btn">
-                                <span>📄</span> View Statements
-                            </button>
-                            <button className="quick-link-btn">
-                                <span>📊</span> Credit Report
                             </button>
                             <button className="quick-link-btn" onClick={() => setShowCalculatorModal(true)}>
                                 <span>🧮</span> Loan Calculator
@@ -313,14 +298,14 @@ export default function LoansPage() {
                     <div style={{ background: 'white', borderRadius: '16px', width: '460px' }}>
                         <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0' }}>
                             <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#112e51' }}>Make Loan Payment</h2>
-                            <p style={{ fontSize: '14px', color: '#64748b' }}>{selectedLoan.id} - {selectedLoan.type} Loan</p>
+                            <p style={{ fontSize: '14px', color: '#64748b' }}>{selectedLoan.loan_id} - {selectedLoan.loan_type} Loan</p>
                         </div>
                         {!paymentSuccess ? (
                             <>
                                 <div style={{ padding: '24px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
-                                        <div><div style={{ fontSize: '12px', color: '#64748b' }}>Balance</div><div style={{ fontSize: '24px', fontWeight: 700, color: '#ef4444' }}>${selectedLoan.remaining.toLocaleString()}</div></div>
-                                        <div style={{ textAlign: 'right' }}><div style={{ fontSize: '12px', color: '#64748b' }}>Monthly Due</div><div style={{ fontSize: '24px', fontWeight: 700 }}>${selectedLoan.monthlyPayment}</div></div>
+                                        <div><div style={{ fontSize: '12px', color: '#64748b' }}>Balance</div><div style={{ fontSize: '24px', fontWeight: 700, color: '#ef4444' }}>${selectedLoan.remaining_balance.toLocaleString()}</div></div>
+                                        <div style={{ textAlign: 'right' }}><div style={{ fontSize: '12px', color: '#64748b' }}>Weekly Due</div><div style={{ fontSize: '24px', fontWeight: 700 }}>${selectedLoan.weekly_payment}</div></div>
                                     </div>
                                     <div style={{ marginBottom: '16px' }}>
                                         <label style={{ display: 'block', fontSize: '14px', color: '#475569', marginBottom: '8px', fontWeight: 500 }}>Payment Amount</label>
@@ -330,15 +315,9 @@ export default function LoansPage() {
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-                                        <button onClick={() => setPaymentAmount(selectedLoan.monthlyPayment.toString())} style={{ padding: '8px 14px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>Monthly (${selectedLoan.monthlyPayment})</button>
-                                        <button onClick={() => setPaymentAmount(selectedLoan.remaining.toString())} style={{ padding: '8px 14px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>Pay Off (${selectedLoan.remaining.toLocaleString()})</button>
+                                        <button onClick={() => setPaymentAmount(selectedLoan.weekly_payment.toString())} style={{ padding: '8px 14px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>Weekly (${selectedLoan.weekly_payment})</button>
+                                        <button onClick={() => setPaymentAmount(selectedLoan.remaining_balance.toString())} style={{ padding: '8px 14px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>Pay Off (${selectedLoan.remaining_balance.toLocaleString()})</button>
                                     </div>
-                                    {paymentAmount && (
-                                        <div style={{ padding: '16px', background: '#f0fdf4', borderRadius: '8px' }}>
-                                            <div style={{ fontSize: '12px', color: '#166534' }}>New Balance</div>
-                                            <div style={{ fontSize: '24px', fontWeight: 700, color: '#22c55e' }}>${Math.max(0, selectedLoan.remaining - Number(paymentAmount)).toLocaleString()}</div>
-                                        </div>
-                                    )}
                                 </div>
                                 <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                                     <button onClick={() => setShowPaymentModal(false)} style={{ padding: '10px 20px', background: '#f1f5f9', border: 'none', borderRadius: '8px', color: '#475569', cursor: 'pointer' }}>Cancel</button>
@@ -382,15 +361,15 @@ export default function LoansPage() {
                                 <div>
                                     <label style={{ display: 'block', fontSize: '14px', color: '#475569', marginBottom: '8px', fontWeight: 500 }}>Term</label>
                                     <select value={loanTerm} onChange={(e) => setLoanTerm(e.target.value)} style={{ width: '100%', padding: '12px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
-                                        <option value="6">6 months</option>
-                                        <option value="12">12 months</option>
-                                        <option value="24">24 months</option>
-                                        <option value="36">36 months</option>
+                                        <option value="4">4 weeks</option>
+                                        <option value="8">8 weeks</option>
+                                        <option value="12">12 weeks</option>
+                                        <option value="24">24 weeks</option>
                                     </select>
                                 </div>
                             </div>
                             <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
-                                <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>Based on your credit score of {mockCreditScore.score}:</div>
+                                <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>Based on your credit score of {credit.score}:</div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <span>Estimated APR</span>
                                     <span style={{ fontWeight: 600, color: '#22c55e' }}>{loanType === 'Payday' ? '2000%' : loanType === 'Housing' ? '5.5%' : loanType === 'Vehicle' ? '7.5%' : '12%'}</span>
@@ -399,7 +378,7 @@ export default function LoansPage() {
                         </div>
                         <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                             <button onClick={() => setShowApplyModal(false)} style={{ padding: '10px 20px', background: '#f1f5f9', border: 'none', borderRadius: '8px', color: '#475569', cursor: 'pointer' }}>Cancel</button>
-                            <button onClick={() => { alert('Application submitted! Check Discord for approval status.'); setShowApplyModal(false); }} style={{ padding: '10px 24px', background: '#112e51', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 600, cursor: 'pointer' }}>Submit Application</button>
+                            <button onClick={() => { alert('Application submitted! Use /bank loan in Discord to apply.'); setShowApplyModal(false); }} style={{ padding: '10px 24px', background: '#112e51', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 600, cursor: 'pointer' }}>Submit Application</button>
                         </div>
                     </div>
                 </div>

@@ -23,30 +23,23 @@ interface DashboardData {
     apiConnected: boolean;
 }
 
-// Mock data fallback
-const mockData: DashboardData = {
-    citizen: { citizenId: 'USC-001234', name: 'John Doe', bankAccounts: { checking: { balance: 45230 }, savings: { balance: 12500 } } },
-    accounts: [
-        { type: 'Checking', number: '****4523', balance: 45230, icon: '🏦' },
-        { type: 'Savings', number: '****8901', balance: 12500, icon: '💰' },
-        { type: 'Credit Card', number: '****3456', balance: -1250, icon: '💳' },
-    ],
-    transactions: [
-        { transaction_id: '1', description: 'Weekly Salary - FBI', amount: 4290, created_at: 'Jan 19', type: 'credit' },
-        { transaction_id: '2', description: 'Transfer to Jane Smith', amount: -500, created_at: 'Jan 18', type: 'debit' },
-        { transaction_id: '3', description: 'Convenience Store', amount: -45, created_at: 'Jan 17', type: 'debit' },
-    ],
-    credit: { score: 720, band: 'Good' },
-    loans: [{ loan_id: 'LOAN-1', remaining_balance: 42500, weekly_payment: 1435 }],
-    fines: [{ fine_id: 'FINE-1', amount: 250 }],
-    warrants: [{ id: 'W-1' }],
-    housing: { tier: 'Studio Apartment', weeklyRent: 550 },
+// Empty initial state (no mock data)
+const emptyData: DashboardData = {
+    citizen: null,
+    accounts: [],
+    transactions: [],
+    credit: { score: 0, band: 'Unknown' },
+    loans: [],
+    fines: [],
+    warrants: [],
+    housing: null,
     apiConnected: false
 };
 
 export default function DashboardPage() {
-    const [data, setData] = useState<DashboardData>(mockData);
+    const [data, setData] = useState<DashboardData>(emptyData);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [showTransferModal, setShowTransferModal] = useState(false);
     const [transferRecipient, setTransferRecipient] = useState('');
     const [transferAmount, setTransferAmount] = useState('');
@@ -58,12 +51,13 @@ export default function DashboardPage() {
                 const res = await fetch('/api/dashboard');
                 if (res.ok) {
                     const apiData = await res.json();
-                    if (apiData.apiConnected) {
-                        setData(apiData);
-                    }
+                    setData(apiData);
+                } else {
+                    setError('Failed to load dashboard data');
                 }
             } catch (err) {
-                console.log('[Dashboard] Using mock data:', err);
+                console.error('[Dashboard] Error:', err);
+                setError('Could not connect to server');
             } finally {
                 setLoading(false);
             }
