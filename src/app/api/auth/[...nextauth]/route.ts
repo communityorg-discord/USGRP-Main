@@ -1,6 +1,9 @@
 import NextAuth from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 
+// Set NEXTAUTH_URL for production
+process.env.NEXTAUTH_URL = process.env.NEXTAUTH_URL || "https://citizen.usgrp.xyz";
+
 const handler = NextAuth({
     secret: "x7K9mP4vQw2sL8nR3tY6uJ1fH5gC0bWa",
     providers: [
@@ -35,3 +38,4 @@ const handler = NextAuth({
 });
 
 export { handler as GET, handler as POST };
+
