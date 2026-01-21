@@ -1,10 +1,27 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import { getCitizen, getAccounts, getTransactions, getCredit, getLoans, getFines, getHousing, checkApiHealth } from '@/lib/api';
 
-// Dev user ID - replace with session user once auth is added
-const DEV_USER_ID = process.env.DEV_USER_ID || '723199054514749450';
-
 export async function GET() {
+    // Get the authenticated user
+    const session = await auth();
+    const userId = (session?.user as { id?: string })?.id;
+
+    if (!userId) {
+        return NextResponse.json({
+            citizen: null,
+            accounts: [],
+            transactions: [],
+            credit: { score: 650, band: 'Fair' },
+            loans: [],
+            fines: [],
+            warrants: [],
+            housing: null,
+            apiConnected: false,
+            error: 'Not authenticated'
+        }, { status: 401 });
+    }
+
     // Check if API is available
     const apiHealthy = await checkApiHealth();
 
@@ -24,13 +41,13 @@ export async function GET() {
 
     try {
         const [citizenRes, accountsRes, txRes, creditRes, loansRes, finesRes, housingRes] = await Promise.all([
-            getCitizen(DEV_USER_ID).catch(() => null),
-            getAccounts(DEV_USER_ID).catch(() => null),
-            getTransactions(DEV_USER_ID, 10).catch(() => null),
-            getCredit(DEV_USER_ID).catch(() => null),
-            getLoans(DEV_USER_ID).catch(() => null),
-            getFines(DEV_USER_ID).catch(() => null),
-            getHousing(DEV_USER_ID).catch(() => null),
+            getCitizen(userId).catch(() => null),
+            getAccounts(userId).catch(() => null),
+            getTransactions(userId, 10).catch(() => null),
+            getCredit(userId).catch(() => null),
+            getLoans(userId).catch(() => null),
+            getFines(userId).catch(() => null),
+            getHousing(userId).catch(() => null),
         ]);
 
         return NextResponse.json({
