@@ -1,8 +1,7 @@
 import NextAuth from "next-auth";
 import Discord from "next-auth/providers/discord";
-import type { NextAuthConfig } from "next-auth";
 
-const config: NextAuthConfig = {
+const { handlers, auth, signIn, signOut } = NextAuth({
     secret: "x7K9mP4vQw2sL8nR3tY6uJ1fH5gC0bWa",
     providers: [
         Discord({
@@ -33,8 +32,6 @@ const config: NextAuthConfig = {
     pages: {
         signIn: "/login",
     },
-};
-
-const { handlers, auth, signIn, signOut } = NextAuth(config);
+});
 
 export { handlers, auth, signIn, signOut };
