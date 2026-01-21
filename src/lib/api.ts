@@ -103,8 +103,11 @@ export async function getLoans(userId: string, guildId?: string) {
 
 export async function getPayroll(userId: string, guildId?: string) {
     const params = guildId ? `?guildId=${guildId}` : '';
-    return apiRequest<{ ok: boolean; payslips: unknown[] }>(`/api/citizen/${userId}/payroll${params}`);
+    return apiRequest<{ ok: boolean; payslips: unknown[]; job?: unknown }>(`/api/citizen/${userId}/payroll${params}`);
 }
+
+// Alias for getPayroll
+export const getPayslips = getPayroll;
 
 export async function getFines(userId: string, guildId?: string) {
     const params = guildId ? `?guildId=${guildId}` : '';
