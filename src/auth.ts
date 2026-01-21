@@ -2,10 +2,11 @@ import NextAuth from "next-auth";
 import Discord from "next-auth/providers/discord";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+    secret: "x7K9mP4vQw2sL8nR3tY6uJ1fH5gC0bWa",
     providers: [
         Discord({
-            clientId: process.env.DISCORD_CLIENT_ID!,
-            clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+            clientId: "1459400314372489246",
+            clientSecret: "cVot7bjutcnVS9SAc-nI8ISD3T59LM-t",
             authorization: {
                 params: {
                     scope: "identify guilds"
