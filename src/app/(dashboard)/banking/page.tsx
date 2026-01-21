@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-// Mock data
+// Mock data (fallback)
 const mockAccounts = [
     { id: 1, type: 'Checking', number: '****4523', balance: 45230, routingNumber: '******789', status: 'Active', opened: 'Jan 15, 2024' },
     { id: 2, type: 'Savings', number: '****8901', balance: 12500, routingNumber: '******789', status: 'Active', opened: 'Jan 15, 2024', apy: '2.5%' },
-    { id: 3, type: 'Business', number: '****2345', balance: 8750, routingNumber: '******789', status: 'Active', opened: 'Mar 10, 2024' },
 ];
 
 const mockCards = [
@@ -19,17 +18,45 @@ const mockRecentActivity = [
     { id: 2, desc: 'Weekly Salary', amount: 4290, date: 'Jan 19', location: 'FBI Payroll' },
     { id: 3, desc: 'Transfer to Savings', amount: -500, date: 'Jan 18', location: 'Internal' },
     { id: 4, desc: 'Grocery Store', amount: -87, date: 'Jan 17', location: 'FreshMart' },
-    { id: 5, desc: 'Gas Station', amount: -55, date: 'Jan 16', location: 'Shell' },
-    { id: 6, desc: 'Restaurant', amount: -65, date: 'Jan 15', location: 'Olive Garden' },
 ];
+
+interface Account {
+    id?: number;
+    type: string;
+    number: string;
+    balance: number;
+    routingNumber?: string;
+    status?: string;
+    opened?: string;
+    apy?: string;
+    icon?: string;
+}
+
+interface Card {
+    id: number;
+    type: string;
+    number: string;
+    holder: string;
+    expiry: string;
+    status: string;
+    locked: boolean;
+    color: string;
+    limit?: number;
+    used?: number;
+}
 
 type ModalType = 'transfer' | 'deposit' | 'accountDetails' | 'cardActions' | 'lockCard' | 'changePin' | 'reportLost' | 'mobileWallet' | 'spendingAlerts' | 'requestCard' | null;
 
 export default function BankingPage() {
+    const [accounts, setAccounts] = useState<Account[]>(mockAccounts);
+    const [cards, setCards] = useState<Card[]>(mockCards);
+    const [totalAssets, setTotalAssets] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    const [apiConnected, setApiConnected] = useState(false);
+
     const [modal, setModal] = useState<ModalType>(null);
-    const [selectedAccount, setSelectedAccount] = useState<typeof mockAccounts[0] | null>(null);
-    const [selectedCard, setSelectedCard] = useState<typeof mockCards[0] | null>(null);
-    const [cards, setCards] = useState(mockCards);
+    const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+    const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
     // Transfer form
     const [transferFrom, setTransferFrom] = useState('');
@@ -43,7 +70,40 @@ export default function BankingPage() {
     const [alertThreshold, setAlertThreshold] = useState('100');
     const [alertEnabled, setAlertEnabled] = useState(true);
 
-    const totalAssets = mockAccounts.reduce((s, a) => s + a.balance, 0);
+    // Fetch real data
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const res = await fetch('/api/banking');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.accounts && data.accounts.length > 0) {
+                        setAccounts(data.accounts.map((a: Account, i: number) => ({
+                            ...a,
+                            id: i + 1,
+                            routingNumber: '******789',
+                            status: 'Active',
+                            opened: 'Jan 2024'
+                        })));
+                        setTotalAssets(data.total || data.accounts.reduce((s: number, a: Account) => s + a.balance, 0));
+                        setApiConnected(true);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch banking data:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchData();
+    }, []);
+
+    // Calculate total if not from API
+    useEffect(() => {
+        if (!apiConnected) {
+            setTotalAssets(accounts.reduce((s, a) => s + a.balance, 0));
+        }
+    }, [accounts, apiConnected]);
 
     const handleTransfer = () => {
         setTransferSuccess(true);
