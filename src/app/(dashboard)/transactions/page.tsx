@@ -1,28 +1,24 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
-// More mock transactions for fuller display
-const mockTransactions = [
-    { id: 1, description: 'Weekly Salary - FBI', amount: 4290, date: '2026-01-19', type: 'credit', category: 'Payroll', account: 'Checking' },
-    { id: 2, description: 'Transfer to Jane Smith', amount: -500, date: '2026-01-18', type: 'debit', category: 'Transfer', account: 'Checking' },
-    { id: 3, description: 'Convenience Store', amount: -45, date: '2026-01-17', type: 'debit', category: 'Shopping', account: 'Checking' },
-    { id: 4, description: 'Casino Winnings', amount: 250, date: '2026-01-16', type: 'credit', category: 'Gambling', account: 'Checking' },
-    { id: 5, description: 'Housing Rent', amount: -1500, date: '2026-01-15', type: 'debit', category: 'Housing', account: 'Checking' },
-    { id: 6, description: 'Interest Payment', amount: 12, date: '2026-01-14', type: 'credit', category: 'Interest', account: 'Savings' },
-    { id: 7, description: 'Weekly Salary - FBI', amount: 4290, date: '2026-01-12', type: 'credit', category: 'Payroll', account: 'Checking' },
-    { id: 8, description: 'ATM Withdrawal', amount: -200, date: '2026-01-11', type: 'debit', category: 'Cash', account: 'Checking' },
-    { id: 9, description: 'Gas Station', amount: -55, date: '2026-01-10', type: 'debit', category: 'Transportation', account: 'Checking' },
-    { id: 10, description: 'Restaurant', amount: -85, date: '2026-01-09', type: 'debit', category: 'Food', account: 'Credit Card' },
-    { id: 11, description: 'Grocery Store', amount: -125, date: '2026-01-08', type: 'debit', category: 'Food', account: 'Checking' },
-    { id: 12, description: 'Electric Bill', amount: -95, date: '2026-01-07', type: 'debit', category: 'Utilities', account: 'Checking' },
-];
+interface Transaction {
+    transaction_id: string;
+    description: string;
+    amount: number;
+    created_at: string;
+    type: string;
+    category?: string;
+    account?: string;
+}
 
 const categories = ['All', 'Payroll', 'Transfer', 'Shopping', 'Gambling', 'Housing', 'Interest', 'Cash', 'Transportation', 'Food', 'Utilities'];
 const accounts = ['All', 'Checking', 'Savings', 'Credit Card'];
 const types = ['All', 'Income', 'Expenses'];
 
 export default function TransactionsPage() {
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All');
     const [accountFilter, setAccountFilter] = useState('All');
@@ -30,10 +26,27 @@ export default function TransactionsPage() {
     const [dateRange, setDateRange] = useState('30');
     const [showExportModal, setShowExportModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
-    const [selectedTx, setSelectedTx] = useState<typeof mockTransactions[0] | null>(null);
+    const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const res = await fetch('/api/transactions?limit=100');
+                if (res.ok) {
+                    const data = await res.json();
+                    setTransactions(data.transactions || []);
+                }
+            } catch (error) {
+                console.error('Failed to fetch transactions:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
+    }, []);
 
     const filteredTransactions = useMemo(() => {
-        return mockTransactions.filter(tx => {
+        return transactions.filter(tx => {
             if (search && !tx.description.toLowerCase().includes(search.toLowerCase())) return false;
             if (categoryFilter !== 'All' && tx.category !== categoryFilter) return false;
             if (accountFilter !== 'All' && tx.account !== accountFilter) return false;
@@ -41,7 +54,7 @@ export default function TransactionsPage() {
             if (typeFilter === 'Expenses' && tx.amount > 0) return false;
             return true;
         });
-    }, [search, categoryFilter, accountFilter, typeFilter]);
+    }, [transactions, search, categoryFilter, accountFilter, typeFilter]);
 
     const totalIncome = filteredTransactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
     const totalExpenses = Math.abs(filteredTransactions.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0));
@@ -50,7 +63,7 @@ export default function TransactionsPage() {
     const handleExport = () => {
         const csv = [
             ['Date', 'Description', 'Category', 'Account', 'Amount'],
-            ...filteredTransactions.map(t => [t.date, t.description, t.category, t.account, t.amount.toString()])
+            ...filteredTransactions.map(t => [t.created_at, t.description, t.category || '', t.account || '', t.amount.toString()])
         ].map(row => row.join(',')).join('\n');
 
         const blob = new Blob([csv], { type: 'text/csv' });
@@ -62,14 +75,25 @@ export default function TransactionsPage() {
         setShowExportModal(false);
     };
 
-    // Calculate category breakdown
     const categoryBreakdown = useMemo(() => {
         const breakdown: { [key: string]: number } = {};
         filteredTransactions.filter(t => t.amount < 0).forEach(t => {
-            breakdown[t.category] = (breakdown[t.category] || 0) + Math.abs(t.amount);
+            const cat = t.category || 'Other';
+            breakdown[cat] = (breakdown[cat] || 0) + Math.abs(t.amount);
         });
         return Object.entries(breakdown).sort((a, b) => b[1] - a[1]).slice(0, 5);
     }, [filteredTransactions]);
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '32px', marginBottom: '16px' }}>⏳</div>
+                    <div style={{ color: '#64748b' }}>Loading transactions...</div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -127,13 +151,7 @@ export default function TransactionsPage() {
                                 placeholder="Search transactions..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                style={{
-                                    padding: '10px 16px',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '8px',
-                                    fontSize: '14px',
-                                    width: '200px',
-                                }}
+                                style={{ padding: '10px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', width: '200px' }}
                             />
                             <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={{ padding: '10px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
                                 {types.map(t => <option key={t} value={t}>{t}</option>)}
@@ -143,12 +161,6 @@ export default function TransactionsPage() {
                             </select>
                             <select value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)} style={{ padding: '10px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
                                 {accounts.map(a => <option key={a} value={a}>{a === 'All' ? 'All Accounts' : a}</option>)}
-                            </select>
-                            <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} style={{ padding: '10px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
-                                <option value="7">Last 7 days</option>
-                                <option value="30">Last 30 days</option>
-                                <option value="90">Last 90 days</option>
-                                <option value="365">Last year</option>
                             </select>
                             {(categoryFilter !== 'All' || accountFilter !== 'All' || typeFilter !== 'All' || search) && (
                                 <button onClick={() => { setCategoryFilter('All'); setAccountFilter('All'); setTypeFilter('All'); setSearch(''); }} style={{ padding: '10px 16px', background: '#f1f5f9', border: 'none', borderRadius: '8px', color: '#64748b', fontSize: '14px', cursor: 'pointer' }}>
@@ -169,7 +181,6 @@ export default function TransactionsPage() {
                                     <th></th>
                                     <th>Description</th>
                                     <th>Category</th>
-                                    <th>Account</th>
                                     <th>Date</th>
                                     <th>Amount</th>
                                 </tr>
@@ -177,24 +188,23 @@ export default function TransactionsPage() {
                             <tbody>
                                 {filteredTransactions.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                                            No transactions found matching your filters
+                                        <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                                            No transactions found
                                         </td>
                                     </tr>
                                 ) : (
                                     filteredTransactions.map((tx) => (
-                                        <tr key={tx.id} style={{ cursor: 'pointer' }} onClick={() => { setSelectedTx(tx); setShowDetailModal(true); }}>
+                                        <tr key={tx.transaction_id} style={{ cursor: 'pointer' }} onClick={() => { setSelectedTx(tx); setShowDetailModal(true); }}>
                                             <td>
-                                                <div className={`tx-icon ${tx.type}`}>{tx.type === 'credit' ? '↓' : '↑'}</div>
+                                                <div className={`tx-icon ${tx.amount > 0 ? 'credit' : 'debit'}`}>{tx.amount > 0 ? '↓' : '↑'}</div>
                                             </td>
                                             <td style={{ fontWeight: 500 }}>{tx.description}</td>
                                             <td>
-                                                <span style={{ padding: '4px 10px', background: '#f1f5f9', borderRadius: '4px', fontSize: '12px' }}>{tx.category}</span>
+                                                <span style={{ padding: '4px 10px', background: '#f1f5f9', borderRadius: '4px', fontSize: '12px' }}>{tx.category || tx.type}</span>
                                             </td>
-                                            <td style={{ color: '#64748b' }}>{tx.account}</td>
-                                            <td style={{ color: '#64748b' }}>{tx.date}</td>
-                                            <td className={`tx-amount ${tx.type}`} style={{ fontWeight: 600 }}>
-                                                {tx.amount >= 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                                            <td style={{ color: '#64748b' }}>{tx.created_at}</td>
+                                            <td className={`tx-amount ${tx.amount > 0 ? 'credit' : 'debit'}`} style={{ fontWeight: 600 }}>
+                                                {tx.amount >= 0 ? '+' : ''}${tx.amount.toLocaleString()}
                                             </td>
                                         </tr>
                                     ))
@@ -209,38 +219,23 @@ export default function TransactionsPage() {
                     {/* Spending Breakdown */}
                     <div className="sidebar-widget">
                         <h3>Spending by Category</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {categoryBreakdown.map(([cat, amount]) => (
-                                <div key={cat}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                        <span style={{ fontSize: '14px' }}>{cat}</span>
-                                        <span style={{ fontWeight: 600 }}>${amount.toLocaleString()}</span>
+                        {categoryBreakdown.length === 0 ? (
+                            <div style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>No spending data</div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {categoryBreakdown.map(([cat, amount]) => (
+                                    <div key={cat}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                            <span style={{ fontSize: '14px' }}>{cat}</span>
+                                            <span style={{ fontWeight: 600 }}>${amount.toLocaleString()}</span>
+                                        </div>
+                                        <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                                            <div style={{ height: '100%', width: `${totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0}%`, background: 'var(--primary)', borderRadius: '4px' }} />
+                                        </div>
                                     </div>
-                                    <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
-                                        <div style={{ height: '100%', width: `${(amount / totalExpenses) * 100}%`, background: 'var(--primary)', borderRadius: '4px' }} />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Quick Stats */}
-                    <div className="sidebar-widget">
-                        <h3>Quick Stats</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: '#64748b' }}>Avg Transaction</span>
-                                <span style={{ fontWeight: 600 }}>${Math.round(totalExpenses / filteredTransactions.filter(t => t.amount < 0).length).toLocaleString()}</span>
+                                ))}
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: '#64748b' }}>Largest Expense</span>
-                                <span style={{ fontWeight: 600, color: '#ef4444' }}>-${Math.max(...filteredTransactions.filter(t => t.amount < 0).map(t => Math.abs(t.amount)))}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: '#64748b' }}>Largest Income</span>
-                                <span style={{ fontWeight: 600, color: '#22c55e' }}>+${Math.max(...filteredTransactions.filter(t => t.amount > 0).map(t => t.amount))}</span>
-                            </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Actions */}
@@ -249,12 +244,6 @@ export default function TransactionsPage() {
                         <div className="quick-links">
                             <button className="quick-link-btn" onClick={() => setShowExportModal(true)}>
                                 <span>📥</span> Export to CSV
-                            </button>
-                            <button className="quick-link-btn">
-                                <span>📊</span> Spending Report
-                            </button>
-                            <button className="quick-link-btn">
-                                <span>🔔</span> Set Budget Alerts
                             </button>
                         </div>
                     </div>
@@ -267,13 +256,6 @@ export default function TransactionsPage() {
                     <div style={{ background: 'white', borderRadius: '16px', width: '400px', padding: '24px' }}>
                         <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#112e51', marginBottom: '8px' }}>Export Transactions</h2>
                         <p style={{ color: '#64748b', marginBottom: '20px' }}>Download {filteredTransactions.length} transactions as CSV</p>
-                        <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', marginBottom: '20px' }}>
-                            <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>Export includes:</div>
-                            <ul style={{ margin: 0, paddingLeft: '20px', color: '#475569', fontSize: '14px' }}>
-                                <li>Date, Description, Category</li>
-                                <li>Account, Amount</li>
-                            </ul>
-                        </div>
                         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                             <button onClick={() => setShowExportModal(false)} style={{ padding: '10px 20px', background: '#f1f5f9', border: 'none', borderRadius: '8px', color: '#475569', cursor: 'pointer' }}>Cancel</button>
                             <button onClick={handleExport} style={{ padding: '10px 20px', background: '#112e51', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 600, cursor: 'pointer' }}>📥 Download CSV</button>
@@ -297,10 +279,9 @@ export default function TransactionsPage() {
                                 <div style={{ color: '#64748b', marginTop: '4px' }}>{selectedTx.description}</div>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                <div><div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Date</div><div style={{ fontWeight: 500 }}>{selectedTx.date}</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Category</div><div style={{ fontWeight: 500 }}>{selectedTx.category}</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Account</div><div style={{ fontWeight: 500 }}>{selectedTx.account}</div></div>
+                                <div><div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Date</div><div style={{ fontWeight: 500 }}>{selectedTx.created_at}</div></div>
                                 <div><div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Type</div><div style={{ fontWeight: 500, color: selectedTx.amount >= 0 ? '#22c55e' : '#ef4444' }}>{selectedTx.amount >= 0 ? 'Income' : 'Expense'}</div></div>
+                                <div><div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>ID</div><div style={{ fontWeight: 500, fontSize: '12px', fontFamily: 'monospace' }}>{selectedTx.transaction_id}</div></div>
                             </div>
                         </div>
                         <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0' }}>
