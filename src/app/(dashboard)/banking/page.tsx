@@ -196,7 +196,7 @@ export default function BankingPage() {
                                 <div key={card.id} style={{ position: 'relative' }}>
                                     <div
                                         style={{
-                                            background: card.locked ? 'linear-gradient(135deg, #64748b 0%, #475569 100%)' : card.color,
+                                            background: card.locked ? 'linear-gradient(135deg, #64748b 0%, #475569 100%)' : (card.color || 'linear-gradient(135deg, #112e51 0%, #205493 100%)'),
                                             borderRadius: '16px',
                                             padding: '24px',
                                             color: 'white',
@@ -221,10 +221,10 @@ export default function BankingPage() {
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                             <div>
                                                 <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '4px' }}>
-                                                    {card.type} Card {card.locked && '(Locked)'}
+                                                    {card.type || 'Card'} Card {card.locked && '(Locked)'}
                                                 </div>
                                                 <div style={{ fontSize: '20px', fontWeight: 600, letterSpacing: '2px' }}>
-                                                    •••• •••• •••• {card.number.slice(-4)}
+                                                    •••• •••• •••• {(card.number || '0000').slice(-4)}
                                                 </div>
                                             </div>
                                             <div style={{ fontSize: '24px' }}>💳</div>
@@ -233,11 +233,11 @@ export default function BankingPage() {
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                 <div>
                                                     <div style={{ fontSize: '10px', opacity: 0.7 }}>CARD HOLDER</div>
-                                                    <div style={{ fontSize: '14px', fontWeight: 600 }}>{card.holder}</div>
+                                                    <div style={{ fontSize: '14px', fontWeight: 600 }}>{card.holder || 'CARD HOLDER'}</div>
                                                 </div>
                                                 <div>
                                                     <div style={{ fontSize: '10px', opacity: 0.7 }}>EXPIRES</div>
-                                                    <div style={{ fontSize: '14px', fontWeight: 600 }}>{card.expiry}</div>
+                                                    <div style={{ fontSize: '14px', fontWeight: 600 }}>{card.expiry || 'N/A'}</div>
                                                 </div>
                                             </div>
                                             {'limit' in card && card.limit && (
