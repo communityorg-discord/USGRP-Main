@@ -2,10 +2,23 @@
 
 import { useState, useEffect } from 'react';
 
+interface AddressObject {
+    street?: string;
+    city?: string;
+    state?: string;
+    stateAbbr?: string;
+    zipCode?: string;
+    neighborhood?: string;
+    formatted?: string;
+    oneLine?: string;
+    special?: string;
+    type?: string;
+}
+
 interface Housing {
     propertyId?: string;
     tier?: number;
-    address?: string;
+    address?: string | AddressObject;
     city?: string;
     state?: string;
     neighborhood?: string;
@@ -24,6 +37,24 @@ const tierConfig: Record<number, { name: string; weeklyRent: number; features: s
     5: { name: 'Single Family Home', weeklyRent: 2000, features: ['Large yard', '3+ Bedrooms', 'Garage'] },
     6: { name: 'Luxury Estate', weeklyRent: 5000, features: ['Pool', 'Multiple garages', 'Guest house'] },
 };
+
+// Helper to extract address string from address field
+function getAddressString(address: string | AddressObject | undefined): string {
+    if (!address) return 'Address not available';
+    if (typeof address === 'string') return address;
+    // It's an object - try common fields
+    return address.oneLine || address.formatted || address.street || 'Address not available';
+}
+
+// Helper to extract neighborhood
+function getNeighborhood(housing: Housing | null): string {
+    if (!housing) return 'N/A';
+    if (housing.neighborhood) return housing.neighborhood;
+    if (typeof housing.address === 'object' && housing.address?.neighborhood) {
+        return housing.address.neighborhood;
+    }
+    return 'N/A';
+}
 
 export default function HousingPage() {
     const [housing, setHousing] = useState<Housing | null>(null);
@@ -123,14 +154,14 @@ export default function HousingPage() {
                                             <div style={{ width: '120px', height: '120px', background: 'linear-gradient(135deg, #112e51 0%, #205493 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '48px' }}>🏠</div>
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ fontSize: '24px', fontWeight: 700, color: '#112e51', marginBottom: '4px' }}>{currentTier.name}</div>
-                                                <div style={{ color: '#64748b', marginBottom: '12px' }}>{housing.address || 'Address not available'}</div>
+                                                <div style={{ color: '#64748b', marginBottom: '12px' }}>{getAddressString(housing.address)}</div>
                                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                                     {currentTier.features.map((f, i) => (<span key={i} style={{ padding: '4px 12px', background: '#f1f5f9', borderRadius: '20px', fontSize: '13px' }}>{f}</span>))}
                                                 </div>
                                             </div>
                                         </div>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', padding: '20px', background: '#f8fafc', borderRadius: '12px' }}>
-                                            <div><div style={{ fontSize: '12px', color: '#64748b' }}>Neighborhood</div><div style={{ fontWeight: 600, fontSize: '18px' }}>{housing.neighborhood || 'N/A'}</div></div>
+                                            <div><div style={{ fontSize: '12px', color: '#64748b' }}>Neighborhood</div><div style={{ fontWeight: 600, fontSize: '18px' }}>{getNeighborhood(housing)}</div></div>
                                             <div><div style={{ fontSize: '12px', color: '#64748b' }}>Move-in</div><div style={{ fontWeight: 600, fontSize: '18px' }}>{housing.moveInDate || 'N/A'}</div></div>
                                             <div><div style={{ fontSize: '12px', color: '#64748b' }}>Weekly Rent</div><div style={{ fontWeight: 600, fontSize: '18px', color: '#22c55e' }}>${weeklyRent.toLocaleString()}</div></div>
                                         </div>
