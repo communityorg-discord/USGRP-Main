@@ -2,24 +2,6 @@
 
 import { useState, useEffect } from 'react';
 
-// Mock data (fallback)
-const mockAccounts = [
-    { id: 1, type: 'Checking', number: '****4523', balance: 45230, routingNumber: '******789', status: 'Active', opened: 'Jan 15, 2024' },
-    { id: 2, type: 'Savings', number: '****8901', balance: 12500, routingNumber: '******789', status: 'Active', opened: 'Jan 15, 2024', apy: '2.5%' },
-];
-
-const mockCards = [
-    { id: 1, type: 'Debit', number: '****4523', holder: 'JOHN DOE', expiry: '12/28', status: 'Active', locked: false, color: 'linear-gradient(135deg, #112e51 0%, #205493 100%)' },
-    { id: 2, type: 'Credit', number: '****3456', holder: 'JOHN DOE', expiry: '09/27', status: 'Active', locked: false, limit: 5000, used: 1250, color: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' },
-];
-
-const mockRecentActivity = [
-    { id: 1, desc: 'ATM Withdrawal', amount: -200, date: 'Today', location: 'Downtown ATM' },
-    { id: 2, desc: 'Weekly Salary', amount: 4290, date: 'Jan 19', location: 'FBI Payroll' },
-    { id: 3, desc: 'Transfer to Savings', amount: -500, date: 'Jan 18', location: 'Internal' },
-    { id: 4, desc: 'Grocery Store', amount: -87, date: 'Jan 17', location: 'FreshMart' },
-];
-
 interface Account {
     id?: number;
     type: string;
@@ -48,8 +30,8 @@ interface Card {
 type ModalType = 'transfer' | 'deposit' | 'accountDetails' | 'cardActions' | 'lockCard' | 'changePin' | 'reportLost' | 'mobileWallet' | 'spendingAlerts' | 'requestCard' | null;
 
 export default function BankingPage() {
-    const [accounts, setAccounts] = useState<Account[]>(mockAccounts);
-    const [cards, setCards] = useState<Card[]>(mockCards);
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [cards, setCards] = useState<Card[]>([]);
     const [totalAssets, setTotalAssets] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [apiConnected, setApiConnected] = useState(false);
@@ -88,6 +70,9 @@ export default function BankingPage() {
                         setTotalAssets(data.total || data.accounts.reduce((s: number, a: Account) => s + a.balance, 0));
                         setApiConnected(true);
                     }
+                    if (data.cards && data.cards.length > 0) {
+                        setCards(data.cards);
+                    }
                 }
             } catch (error) {
                 console.error('Failed to fetch banking data:', error);
@@ -100,7 +85,7 @@ export default function BankingPage() {
 
     // Calculate total if not from API
     useEffect(() => {
-        if (!apiConnected) {
+        if (!apiConnected && accounts.length > 0) {
             setTotalAssets(accounts.reduce((s, a) => s + a.balance, 0));
         }
     }, [accounts, apiConnected]);
@@ -315,21 +300,11 @@ export default function BankingPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {mockRecentActivity.map((activity) => (
-                                    <tr key={activity.id}>
-                                        <td>
-                                            <div className={`tx-icon ${activity.amount >= 0 ? 'credit' : 'debit'}`}>
-                                                {activity.amount >= 0 ? '↓' : '↑'}
-                                            </div>
-                                        </td>
-                                        <td style={{ fontWeight: 500 }}>{activity.desc}</td>
-                                        <td style={{ color: '#64748b' }}>{activity.location}</td>
-                                        <td style={{ color: '#64748b' }}>{activity.date}</td>
-                                        <td className={`tx-amount ${activity.amount >= 0 ? 'credit' : 'debit'}`} style={{ fontWeight: 600 }}>
-                                            {activity.amount >= 0 ? '+' : ''}${activity.amount.toLocaleString()}
-                                        </td>
-                                    </tr>
-                                ))}
+                                <tr>
+                                    <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                                        View transaction history on the Transactions page
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -423,7 +398,7 @@ export default function BankingPage() {
                                             {transferType === 'internal' ? (
                                                 <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className="form-select">
                                                     <option value="">Select account</option>
-                                                    {mockAccounts.filter(a => a.id.toString() !== transferFrom).map((acc) => (
+                                                    {accounts.filter((a: Account) => a.id?.toString() !== transferFrom).map((acc: Account) => (
                                                         <option key={acc.id} value={acc.id}>{acc.type}</option>
                                                     ))}
                                                 </select>
