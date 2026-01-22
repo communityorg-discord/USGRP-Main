@@ -133,7 +133,7 @@ export default function BankingPage() {
                             <div className="account-type">{account.type}</div>
                             <div className="account-number">{account.number}</div>
                         </div>
-                        <div className="account-balance">${account.balance.toLocaleString()}</div>
+                        <div className="account-balance">${(account.balance || 0).toLocaleString()}</div>
                     </div>
                 ))}
             </div>
@@ -341,7 +341,7 @@ export default function BankingPage() {
                                         <div style={{ fontSize: '14px', fontWeight: 500 }}>{acc.type}</div>
                                         <div style={{ fontSize: '12px', color: '#64748b' }}>{acc.number}</div>
                                     </div>
-                                    <div style={{ fontWeight: 600 }}>${acc.balance.toLocaleString()}</div>
+                                    <div style={{ fontWeight: 600 }}>${(acc.balance || 0).toLocaleString()}</div>
                                 </div>
                             ))}
                             <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '12px', display: 'flex', justifyContent: 'space-between' }}>
@@ -389,7 +389,7 @@ export default function BankingPage() {
                                             <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className="form-select">
                                                 <option value="">Select account</option>
                                                 {accounts.map((acc, idx) => (
-                                                    <option key={acc.id} value={acc.id}>{acc.type} - ${acc.balance.toLocaleString()}</option>
+                                                    <option key={acc.id} value={acc.id}>{acc.type} - ${(acc.balance || 0).toLocaleString()}</option>
                                                 ))}
                                             </select>
                                         </div>

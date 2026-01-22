@@ -100,7 +100,7 @@ export default function HousingPage() {
     }
 
     const currentTier = housing?.tier !== undefined ? tierConfig[housing.tier] || tierConfig[0] : tierConfig[0];
-    const weeklyRent = housing?.weeklyRent || currentTier.weeklyRent;
+    const weeklyRent = housing?.weeklyRent || currentTier?.weeklyRent || 0;
 
     return (
         <div>
